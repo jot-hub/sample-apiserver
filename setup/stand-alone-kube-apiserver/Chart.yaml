@@ -1,0 +1,4 @@
+apiVersion: 0.0.1
+name: simple-image-kube-apiserver
+version: 0.0.1
+description: standalone kube apiserver

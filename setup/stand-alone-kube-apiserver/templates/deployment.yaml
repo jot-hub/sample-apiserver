@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wardle-server
+  namespace: wardle
+  labels:
+    apiserver: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      apiserver: "true"
+  template:
+    metadata:
+      labels:
+        apiserver: "true"
+    spec:
+      containers:
+      - name: wardle-server
+        # build from staging/src/k8s.io/sample-apiserver/artifacts/simple-image/Dockerfile
+        # or
+        # docker pull k8s.gcr.io/e2e-test-images/sample-apiserver:1.17.4
+        # docker tag k8s.gcr.io/e2e-test-images/sample-apiserver:1.17.4 kube-sample-apiserver:latest
+        image: kube-sample-apiserver
+        imagePullPolicy: IfNotPresent
+        args:
+          - "--etcd-servers=https://kine-with-mysql-service.wardle.svc.cluster.local:23790"
+          - "--etcd-cafile=/tmp/certs/ca/cert-chain"
+          - "--etcd-certfile=/tmp/certs/kine-tls/tls-cert"
+          - "--etcd-keyfile=/tmp/certs/kine-tls/tls-key"
+          - "--v=7"
+          - "--tls-cert-file=/tmp/certs/tls/tls-cert"
+          - "--tls-private-key-file=/tmp/certs/tls/tls-key"
+          - "--authentication-skip-lookup"
+          - "--client-ca-file=/tmp/certs/ca/cert-chain"
+          - "--kubeconfig=/tmp/kubeconfig/constructed-kubeconfig-incluster"
+          - "--authentication-kubeconfig=/tmp/kubeconfig/dummy/dummy-kubeconfig"
+          - "--authorization-kubeconfig=/tmp/kubeconfig/dummy/dummy-kubeconfig"
+          - "--disable-admission-plugins=MutatingAdmissionWebhook,ValidatingAdmissionWebhook"
+        volumeMounts:
+          - name: tls
+            mountPath: "/tmp/certs/tls"
+            readOnly: true
+          - name: kine-tls
+            mountPath: "/tmp/certs/kine-tls"
+            readOnly: true            
+          - name: common-cert-chain
+            mountPath: "/tmp/certs/ca"
+            readOnly: true            
+          - name: dummy-kubeconfig
+            mountPath: "/tmp/kubeconfig/dummy"
+            readOnly: true
+          - name: constructed-kubeconfig-incluster
+            mountPath: "/tmp/kubeconfig"
+            readOnly: true            
+      volumes:
+        - name: tls
+          secret:
+            secretName: tls-bundle
+            items:
+              - key: tls-cert
+                path: tls-cert
+              - key: tls-key
+                path: tls-key
+        - name: kine-tls
+          secret:
+            secretName: kine-tls-bundle
+            items:
+              - key: tls-cert
+                path: tls-cert
+              - key: tls-key
+                path: tls-key                   
+        - name: common-cert-chain
+          secret:
+            secretName: common-cert-chain
+            items:
+              - key: cert-chain
+                path: cert-chain
+        - name: dummy-kubeconfig
+          secret:
+            secretName: dummy-kubeconfig
+            items:
+              - key: dummy-kubeconfig
+                path: dummy-kubeconfig
+        - name: constructed-kubeconfig-incluster
+          secret:
+            secretName: constructed-kubeconfig-incluster
+            items:
+              - key: constructed-kubeconfig-incluster
+                path: constructed-kubeconfig-incluster                

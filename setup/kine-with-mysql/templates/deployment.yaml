@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kine
+  namespace: wardle
+  labels:
+    app: kine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kine
+  template:
+    metadata:
+      labels:
+        app: kine
+    spec:
+      containers:
+      - name: kine
+        image: kine
+        imagePullPolicy: IfNotPresent
+        command:
+          - kine
+        args: [ --endpoint, mysql://root:example@tcp(127.0.0.1:3306)/kine, --ca-file, /tmp/certs/ca/cert-chain, --cert-file, /tmp/certs/kine-tls/tls-cert, --key-file, /tmp/certs/kine-tls/tls-key, --server-cert-file, /tmp/certs/kine-tls/tls-cert, --server-key-file, /tmp/certs/kine-tls/tls-key ]
+        volumeMounts:
+          - name: kine-tls
+            mountPath: "/tmp/certs/kine-tls"
+            readOnly: true
+          - name: common-cert-chain
+            mountPath: "/tmp/certs/ca"
+            readOnly: true            
+      - name:  mysql
+        image: amd64/mysql
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            value: example
+        volumeMounts:
+          - name: mysql-tls
+            mountPath: "/tmp/certs/mysql-tls"
+            readOnly: true
+          - name: common-cert-chain
+            mountPath: "/tmp/certs/ca"
+            readOnly: true
+          - name: mysql-ssl-conf
+            mountPath: "/etc/mysql/conf.d" 
+            readOnly: true
+          - name: kine-tls
+            mountPath: "/tmp/certs/kine-mysql-tls"
+            readOnly: true             
+      volumes:
+        - name: kine-tls
+          secret:
+            secretName: kine-tls-bundle
+            items:
+              - key: tls-cert
+                path: tls-cert
+              - key: tls-key
+                path: tls-key    
+        - name: mysql-tls
+          secret:
+            secretName: mysql-tls-bundle
+            items:
+              - key: tls-cert
+                path: tls-cert
+              - key: tls-key
+                path: tls-key
+        - name: common-cert-chain
+          secret:
+            secretName: common-cert-chain
+            items:
+              - key: cert-chain
+                path: cert-chain
+        - name: mysql-ssl-conf
+          configMap:
+            name: mysql-ssl-conf
