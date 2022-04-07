@@ -1,3 +1,4 @@
+# execute all the steps below within a separate folder; example: ./certs/20220406
 #init a ca with root and intermediate
 #$ step ca init --helm > values.yaml
 #save certs locally
