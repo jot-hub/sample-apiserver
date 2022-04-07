@@ -25,7 +25,7 @@
 
 #create csr for client and sign it with intermediate to get cert file
 #$ step certificate create --csr --insecure --no-password --san curl --san kubeconfig "client" client-for-kube-apiserver.csr client-for-kube-apiserver.key
-#$ step certificate sign --not-after 168h client-for-kube-apiserver.csr intermediate_ca.crt intermediate_ca_key.key > client-for-kube-apiserver.crt
+#$ step certificate sign --not-after 168h --template ./cert-templates/kube-sample-apiserver-cert-template.tpl client-for-kube-apiserver.csr intermediate_ca.crt intermediate_ca_key.key > client-for-kube-apiserver.crt
 #  - to be supplied in curl & kubeconfig together with unencrypted key
 #for within the cluster
 #$ CLIENTFORKUBEAPISERVERKEY=$(base64 client-for-kube-apiserver.key) yq -i '.users[0].user.client-key-data=strenv(CLIENTFORKUBEAPISERVERKEY)' ~/github.com/jot-hub/k8s-experiments/kafee/setup/standalone-kube-apiserver/misc/constructed-kubeconfig-incluster
@@ -36,7 +36,7 @@
 
 #create csr for kine and sign it with intermediate to get cert file
 #$ step certificate create --csr --insecure --no-password --san 127.0.0.1 --san 0.0.0.0 --san localhost "kine-with-mysql-service.wardle.svc.cluster.local" kube-kine.csr kube-kine.key
-#$ step certificate sign --not-after 168h --template kube-kine-cert-template.tpl kube-kine.csr intermediate_ca.crt intermediate_ca_key.key > kube-kine.crt
+#$ step certificate sign --not-after 168h --template ./cert-templates/kube-kine-cert-template.tpl kube-kine.csr intermediate_ca.crt intermediate_ca_key.key > kube-kine.crt
 #  - to be supplied in kine together with unencrypted key
 #$ KUBEKINECERT=$(base64 kube-kine.crt) yq -i 'select(documentIndex == 0).data.tls-cert=strenv(KUBEKINECERT)' ~/github.com/jot-hub/k8s-experiments/kafee/setup/kine-with-mysql/templates/secret.yaml
 #$ KUBEKINEKEY=$(base64 kube-kine.key) yq -i 'select(documentIndex == 0).data.tls-key=strenv(KUBEKINEKEY)' ~/github.com/jot-hub/k8s-experiments/kafee/setup/kine-with-mysql/templates/secret.yaml
