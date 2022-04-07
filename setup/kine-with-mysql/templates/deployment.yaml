@@ -43,10 +43,7 @@ spec:
             readOnly: true
           - name: mysql-ssl-conf
             mountPath: "/etc/mysql/conf.d" 
-            readOnly: true
-          - name: kine-tls
-            mountPath: "/tmp/certs/kine-mysql-tls"
-            readOnly: true             
+            readOnly: true            
       volumes:
         - name: kine-tls
           secret:
