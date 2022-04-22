@@ -65,7 +65,7 @@ type Capuccino struct {
 	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
 
 	// DisallowedFlunders holds a list of Flunder.Names that are disallowed.
-	DisallowedEspressos []string `json:"disallowedEspressos,omitempty" protobuf:"bytes,2,rep,name=disallowedFlunders"`
+	DisallowedEspressos []string `json:"disallowedEspressos,omitempty" protobuf:"bytes,2,rep,name=disallowedEspressos"`
 }
 
 // +genclient:nonNamespaced
