@@ -30,26 +30,45 @@ import (
 	wardleregistry "k8s.io/sample-apiserver/pkg/registry"
 	fischerstorage "k8s.io/sample-apiserver/pkg/registry/wardle/fischer"
 	flunderstorage "k8s.io/sample-apiserver/pkg/registry/wardle/flunder"
+	
+	"k8s.io/sample-apiserver/pkg/apis/kafee"
+	kafeeinstall "k8s.io/sample-apiserver/pkg/apis/kafee/install"
+	capuccinostorage "k8s.io/sample-apiserver/pkg/registry/kafee/capuccino"
+	espressostorage "k8s.io/sample-apiserver/pkg/registry/kafee/espresso"
 )
 
 var (
 	// Scheme defines methods for serializing and deserializing API objects.
 	Scheme = runtime.NewScheme()
+
+	KafeeScheme = runtime.NewScheme()
 	// Codecs provides methods for retrieving codecs and serializers for specific
 	// versions and content types.
 	Codecs = serializer.NewCodecFactory(Scheme)
+	KafeeCodecs = serializer.NewCodecFactory(KafeeScheme)
 )
 
 func init() {
 	install.Install(Scheme)
+	kafeeinstall.Install(KafeeScheme)
 
 	// we need to add the options to empty v1
 	// TODO fix the server code to avoid this
 	metav1.AddToGroupVersion(Scheme, schema.GroupVersion{Version: "v1"})
 
+	metav1.AddToGroupVersion(KafeeScheme, schema.GroupVersion{Version: "v1"})
+
 	// TODO: keep the generic API server from wanting this
 	unversioned := schema.GroupVersion{Group: "", Version: "v1"}
 	Scheme.AddUnversionedTypes(unversioned,
+		&metav1.Status{},
+		&metav1.APIVersions{},
+		&metav1.APIGroupList{},
+		&metav1.APIGroup{},
+		&metav1.APIResourceList{},
+	)
+
+	KafeeScheme.AddUnversionedTypes(unversioned,
 		&metav1.Status{},
 		&metav1.APIVersions{},
 		&metav1.APIGroupList{},
@@ -115,6 +134,7 @@ func (c completedConfig) New() (*WardleServer, error) {
 	v1alpha1storage := map[string]rest.Storage{}
 	v1alpha1storage["flunders"] = wardleregistry.RESTInPeace(flunderstorage.NewREST(Scheme, c.GenericConfig.RESTOptionsGetter))
 	v1alpha1storage["fischers"] = wardleregistry.RESTInPeace(fischerstorage.NewREST(Scheme, c.GenericConfig.RESTOptionsGetter))
+	
 	apiGroupInfo.VersionedResourcesStorageMap["v1alpha1"] = v1alpha1storage
 
 	v1beta1storage := map[string]rest.Storage{}
@@ -122,6 +142,19 @@ func (c completedConfig) New() (*WardleServer, error) {
 	apiGroupInfo.VersionedResourcesStorageMap["v1beta1"] = v1beta1storage
 
 	if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
+		return nil, err
+	}
+
+	
+	kafeeApiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(kafee.GroupName, KafeeScheme, metav1.ParameterCodec, KafeeCodecs)
+	
+	kafeev1alpha1storage := map[string]rest.Storage{}
+	kafeev1alpha1storage["espressos"] = wardleregistry.RESTInPeace(espressostorage.NewREST(KafeeScheme, c.GenericConfig.RESTOptionsGetter))
+	kafeev1alpha1storage["capuccinos"] = wardleregistry.RESTInPeace(capuccinostorage.NewREST(KafeeScheme, c.GenericConfig.RESTOptionsGetter))
+
+	kafeeApiGroupInfo.VersionedResourcesStorageMap["v1alpha1"] = kafeev1alpha1storage
+
+	if err := s.GenericAPIServer.InstallAPIGroup(&kafeeApiGroupInfo); err != nil {
 		return nil, err
 	}
 
